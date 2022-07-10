@@ -26,7 +26,7 @@ def words_inp(in_str: str, words: dict) -> list:
             result.append(word)
     return result
 
-def save_no_report(no_report: set):
+def save_no_report(no_report: list):
     report_result = {}
     if os.path.exists("./data/noreport.json"):
         with open("./data/noreport.json", 'r') as f:
@@ -73,7 +73,12 @@ if __name__ == "__main__":
     print(f"总人数: {len(datas)}")
     
     no_report = set(students) - set(eat_food_studnet.keys())
-    print("没有报名的人数是: {}".format(len(no_report)))
-    print("没有报名的人是: {}".format(no_report))
-    save_no_report(no_report)
+    no_report_breakfast = []
+    for student in eat_food_studnet.keys():
+        if '早' not in eat_food_studnet[student]:
+            no_report_breakfast.append(student)
+            
+    print("没有报早饭的人数是: {}".format(len(no_report_breakfast)))
+    print("没有报早饭的人是: {}".format(no_report_breakfast))
+    save_no_report(no_report_breakfast)
 
