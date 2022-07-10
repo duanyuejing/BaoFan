@@ -1,77 +1,79 @@
-l1, student_name, student_name1 ,no_report= [], [], [], []
-mo, lun, din, n = 0, 0, 0, 0
-num_student = ['崔宇鑫', '田乐', '杜泽红', '李志鹏', '曹凯杰', '张靳宜', '王浩峰', '唐帅洋',
-               '余琼', '董梦迪', '高洁', '李旭鹏', '闫飞', '阚玉常', '赵勇', '王赵辉', '徐稳栋',
-               '杨政利', '贾云吉', '汪扬', '段越晋', '崔雅芳', '张宇', '赵旗浩', '徐志远', '周金保',
-               '游凯歌', '赵长生', '张聪颖','陈志贤']
+import json
+import os
 
-fin = open("word.txt", 'r')
-fin1 = open("new-word.txt", 'w')
-l2 = fin.readlines()
+def load_students() -> list:
+    with open("./data/students.json", 'r') as f:
+        students = json.load(f)["students"]
+    return students
 
-# 该操作是删除前三行
-for i in range(3):
-    l2.pop(0)
+def load_data() -> list:
+    with open("./data/baofan.txt", 'r') as f:
+        lines = f.readlines()
+        # 删除前三行无用信息
+        for i in range(3):
+            lines.pop(0)
+    return lines
 
+def words_inp(in_str: str, words: dict) -> list:
+    result = []
+    for word in words.keys():
+        inp = False
+        for v in words[word]:
+            if v in in_str:
+                inp = True
+                break
+        if inp:
+            result.append(word)
+    return result
 
-# 将所有的序号删除
-for student in l2:
-    s1 = student.split()
-    s1.pop(0)
-    l1.append(s1)
-
-# 将所有的名字提取到另一个列表中
-for i in range(len(l1)):
-    student_name.append(l1[i][0])
-
-# 规整数据惊醒换行（没五个元素换行）
-for i in student_name:
-    n += 1
-    student_name1.append(i)
-    if n % 5 == 0:
-        student_name1.append('\n')
-str1 = " ".join(student_name1)
-
-# 将数据进行归纳处理，统计早中晚的个数
-for oneself in l1:
-    for i in range(len(oneself)):
-        time = oneself[i]
-        if time == "早":
-            mo += 1
-        elif time == "中" or time == "午":
-            lun += 1
-        elif time == "晚":
-            din += 1
-        elif time == "早中" or time == "早午":
-            mo += 1
-            lun += 1
-        elif time == "中晚" or time == "午晚":
-            lun += 1
-            din += 1
-        elif time == "早晚":
-            mo += 1
-            din += 1
-        elif time == "早中晚" or time == "早午晚":
-            mo += 1
-            lun += 1
-            din += 1
-
-# 判断谁没有报，将其添加到一个列表中
-for name in num_student:
-    for line in l2:
-        if name in line:
-            break
+def save_no_report(no_report: set):
+    report_result = {}
+    if os.path.exists("./data/noreport.json"):
+        with open("./data/noreport.json", 'r') as f:
+            no_reports_last = json.load(f)
+            for student in no_report:
+                if student in no_reports_last.keys():
+                    no_reports_last[student] += 1
+                else:
+                    no_reports_last[student] = 1
+            report_result = no_reports_last
     else:
-        no_report.append(name)
+        for student in no_report:
+            report_result[student] = 1
+    with open("./data/noreport.json", "w") as f:
+        json.dump(report_result, f, indent=4, ensure_ascii=False)
+        
+if __name__ == "__main__":
+    students = load_students()
+    datas = load_data()
+    
+    eat_food_studnet = {}
+    morning_n = 0
+    noon_n = 0
+    night_n = 0
+    words = {"早": ["早"], "午": ["中", "午"], "晚": ["晚"]}
+    for line in datas:
+        report_result = words_inp(line, words)
+        if '早' in report_result:
+            morning_n += 1
+        if '午' in report_result:
+            noon_n += 1
+        if '晚' in report_result:
+            night_n += 1
+                
+        for student_name in students:
+            if student_name in line:
+                # eat_food_studnet[student] = words_inp(line, words)
+                eat_food_studnet[student_name] = report_result
+    # print(json.dumps(eat_food_studnet, indent=4, ensure_ascii=False))
+    print(eat_food_studnet)
+    print(f"早 人数: {morning_n}")
+    print(f"午 人数: {noon_n}")
+    print(f"晚 人数: {night_n}")
+    print(f"总人数: {len(datas)}")
+    
+    no_report = set(students) - set(eat_food_studnet.keys())
+    print("没有报名的人数是: {}".format(len(no_report)))
+    print("没有报名的人是: {}".format(no_report))
+    save_no_report(no_report)
 
-
-
-fin1.write("这是所有的报餐同学名单：\n")
-fin1.write(str1)
-fin1.write("\n总计：{}人\n".format(len(student_name)))
-fin1.write("早{}人，中{}人，晚{}人".format(mo, lun, din))
-fin1.write("\n没有报的人是：\n")
-fin1.write("、".join(no_report))
-fin1.write("\n总计{}人".format(len(no_report)))
-fin.close()
-fin1.close()
